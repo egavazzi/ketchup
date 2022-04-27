@@ -13,8 +13,8 @@ subroutine Bfield(Nz,Z,B,dB)
 
 ! Parameters
   Bm  = 0.0864d-6  ! Magnetospheric B at Z = 0
-  Bi  = 56.0d-6    ! Ionospheric B at Z = Lz
-  Lz  = 5.5d7      ! Length of the system [metres]
+  Bi  = 34.0d-6    ! Ionospheric B at Z = Lz
+  Lz  = 5.2d7      ! Length of the system [metres]
 
 
 ! Compute B
