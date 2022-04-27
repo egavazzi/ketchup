@@ -1,0 +1,4 @@
+# ignore experiments files
+l7/*
+# ignore runnable files
+*.o
