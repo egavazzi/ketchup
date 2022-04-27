@@ -73,5 +73,5 @@ clean :
 	$(FXX) $(FFLAGS) -c $<
 
 %.f90: %.fpp
-	$(PREPROCESSOR) $(DEFINES) -C -P -E $< -o $@
+	$(PREPROCESSOR) $(DEFINES) -C -P  $<  $@
 #	$(PREPROCESSOR) $(DEFINES) -C -P -E $< -o $*.f95
