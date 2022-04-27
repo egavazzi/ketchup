@@ -48,14 +48,14 @@ for jj=1:5
            particle(finitemass(ii)).dvz)])
     set(gca,'fontname','times','fontsize',14)
     if ii==1
-      title(['z=' num2str(z(zz),'%.3e') 'm'],'fontname','times','fontsize',14)
+      title(['z=' num2str(z(zz),3) 'm'])%,'fontname','times','fontsize',18)
     end
     
     if ii==length(finitemass)
-      xlabel('\mu   [Am^{2}]','fontname','times','fontsize',14)
+      xlabel('\mu   [Am^{2}]')%,'fontname','times','fontsize',18)
     end
     if jj==1
-      ylabel('v_{z}  [m/s]','fontname','times','fontsize',14)
+      ylabel('v_{z}  [m/s]')%,'fontname','times','fontsize',18)
     end
   end
 end

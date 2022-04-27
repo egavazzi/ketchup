@@ -5,7 +5,7 @@
 
 print_fig = 0;
 save_input = 0;
-plot_distrib = 0;
+plot_distrib = 1;
 load outp/g.mat
 
 %% Calculating epsilon_r
@@ -13,24 +13,34 @@ disp('---------------------------')
 mass_e = 9.10938215e-31;
 mass_i = 1.672621637e-27;
 epsilon_0 = 8.85418781762039e-12;
-e = 1.602176487e-19;
+e_charge = 1.602176487e-19;
 
 % This is to get the variables of interest from the file inputb6
 dt = finding_var('dt')
 const_a = finding_var('const_a')
 nbr_iterations = finding_var('Niter')
 
+
+dt = 1e-5
+const_a = 200
+nbr_iterations = 800000
+
 n0R = 1.0e9;
 n0L = 3.0e5;
 t = nbr_iterations*dt
 
-omega_p2 = (n0R*e^2/mass_e/epsilon_0) ...
-          + (n0R*e^2/mass_i/epsilon_0) ...
-          + (n0L*e^2/mass_e/epsilon_0) ...
-          + (n0L*e^2/mass_i/epsilon_0);
+omega_p2 = (n0R*e_charge^2/mass_e/epsilon_0) ...
+          + (n0R*e_charge^2/mass_i/epsilon_0) ...
+          + (n0L*e_charge^2/mass_e/epsilon_0) ...
+          + (n0L*e_charge^2/mass_i/epsilon_0);
 
 omega_p = sqrt(omega_p2);
 epsilon_r = (const_a*omega_p*dt)^2
+
+
+new_period = 2*pi*(const_a*dt)
+%2*pi./omega_p*sqrt(epsilon_r) %same result
+
 %% Hard-coded output-directory
 if print_fig
   FigDir = sprintf('Gunell_et_al_2013/%.2e_%.0fs',epsilon_r,t)
@@ -61,7 +71,7 @@ end
 % xicorn=dxi*[0:Nz];
 % xi=0.5*(xicorn(1:end-1) + xicorn(2:end));
 %% Setting time steps to plot
-t_to_plot = [1 2 3 4 5]; % CHOOSE TIME TO PLOT (in s)
+t_to_plot = [5 10 15 20]; % CHOOSE TIME TO PLOT (in s)
 
 load outp/Efield.mat
 pt=[timestepsEfield timestepsEfield(end)+dt]*dt;
@@ -133,7 +143,7 @@ if length(sn)==3
     set(gca,'fontname','times','fontsize',14)
     ylabel('n','fontname','times','fontsize',18)
     title(['Species ' num2str(jj)],'fontname','times','fontsize',16)
-%     axis([z(1) z(end)+ -inf inf],'autoy')
+%     axis([0 5.5e7 -inf inf],'autoy')
     xline(z(end),'--')
     for i = 1:length(index_t_to_plot)
       legend_str(i) = {[num2str(timestepsdensity(index_t_to_plot(i))*dt) 's']};
@@ -177,15 +187,15 @@ if print_fig
   print('-depsc','-painters',fullfile(results_dir,'Current_over_z.eps'))
 end
 %% --- Efield(z,t) --- %
-figure(4)
+figure(5)
 set(gcf,'paperpositionmode','auto','renderer','zbuffer')
 set(gcf,'WindowState','maximized')
 L=zmax-zmin;
 if ~exist('hidefraction')
-  hidefraction=0.05;
+  hidefraction=0.01;
 end
 zrange = (z>zmin+hidefraction*L & z<zmax-hidefraction*L);
-trange = (pt(1:end-1)>0.7 & pt(1:end-1)<5);
+trange = (pt(1:end-1)>1& pt(1:end-1)<20);
 pp=(Efieldmatrix(trange,zrange).').*1000;
 ss=size(pp);
 pp=[[pp zeros(ss(1),1)];zeros(1,ss(2)+1)];
@@ -197,15 +207,15 @@ surf(pt2,pz,pp)
 clear pp
 set(gca,'fontname','times','fontsize',14)
 view(2)
-% axis([min(pt) max(pt) min(pz) max(pz)])
-axis([min(pt2) max(pt2) 4.2e7 max(pz)])
+axis([min(pt) max(pt) min(pz) max(pz)])
+% axis([min(pt2) max(pt2) 4.2e7 max(pz)])
 shading flat
 hh=colorbar;
 set(hh,'fontname','times','fontsize',14)
 hh.Label.String = 'E [mV/m]';
 hh.Label.FontSize = 18;
 colormap(jet);
-caxis([-12 6])
+caxis([-2 1])
 xlabel('t  [s]','fontname','times','fontsize',18)
 ylabel('z  [m]','fontname','times','fontsize',18)
 grid off
@@ -219,7 +229,7 @@ end
 if plot_distrib
   dd=dir('outp');
   timestepsdistr=[];
-  for ii = 1:3:length(dd)
+  for ii = 1:length(dd)
     if length(dd(ii).name)>=17
       if strcmp(dd(ii).name(1:6),'fzvzmu') & strcmp(dd(ii).name(14:17),'.mat')
         timestepsdistr=[timestepsdistr str2num(dd(ii).name(7:13))];
@@ -245,7 +255,7 @@ if plot_distrib
   %   end
 
 
-    for ii=1:length(timestepsdistr)
+    for ii=5%:10:length(timestepsdistr)
       distrfile=['outp/fzvzmu' num2str(timestepsdistr(ii),'%0.7i') '.mat'];
       load(distrfile)
 
