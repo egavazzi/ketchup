@@ -178,14 +178,14 @@ end subroutine LoadDump
 !------------------------------------------------------------------------
 
 recursive subroutine DumpDistr(Nxi,Nspecies,particle,iteration,myid, &
-     attemptno,Nretries)
+     attemptno,Nretries,neighbourRight)
 
   use SpecificTypes
   use ifport
 
   implicit none
 
-  integer Nxi, Nspecies, iteration, myid, attemptno, Nretries
+  integer Nxi, Nspecies, iteration, myid, attemptno, Nretries, neighbourRight
   type(species) particle(Nspecies)
 
   character filename*60, tmpfile*62, fnumber*7, snumber*2, pnumber*4, form*20
@@ -216,15 +216,27 @@ recursive subroutine DumpDistr(Nxi,Nspecies,particle,iteration,myid, &
         ! blank line
         ! and then repeat for the next node, and the next, and ...
         open(unit=1,file=tmpfile,status='replace',err=97)
-        do ixi = 1, Nxi
-           write (1,*,err=98) 'ivzoffset = ', particle(ii)%node(ixi)%ivzoffset
-           write (1,*,err=98)
-           do ivz = 1, particle(ii)%Nvz
-              write (1,fmt=form,err=98)(particle(ii)%node(ixi)%f(ivz,imu), &
-                   ' ', imu=1,particle(ii)%Nmu)
-           end do
-           write (1,*,err=98)
-        end do
+        !if (neighbourRight<0) then
+        !  do ixi = 1, Nxi
+        !    write (1,*,err=98) 'ivzoffset = ', particle(ii)%node(ixi)%ivzoffset
+        !    write (1,*,err=98)
+        !    do ivz = 1, particle(ii)%Nvz
+        !        write (1,fmt=form,err=98)(particle(ii)%node(ixi)%f(ivz,imu), &
+        !            ' ', imu=1,particle(ii)%Nmu)
+        !    end do
+        !    write (1,*,err=98)
+        !  end do
+        !else
+          do ixi = 1, Nxi
+            write (1,*,err=98) 'ivzoffset = ', particle(ii)%node(ixi)%ivzoffset
+            write (1,*,err=98)
+            do ivz = 1, particle(ii)%Nvz
+                write (1,fmt=form,err=98)(particle(ii)%node(ixi)%f(ivz,imu), &
+                    ' ', imu=1,particle(ii)%Nmu)
+            end do
+            write (1,*,err=98)
+          end do
+        !end if
         close(1,err=99)
         ierr = rename(tmpfile,filename)
 
@@ -241,7 +253,7 @@ recursive subroutine DumpDistr(Nxi,Nspecies,particle,iteration,myid, &
   goto 100
 99 write (*,*) 'DumpDistr: error in close statement, myid=', myid
 100 if (attemptno<=Nretries) then
-     call DumpDistr(Nxi,Nspecies,particle,iteration,myid,attemptno,Nretries)
+     call DumpDistr(Nxi,Nspecies,particle,iteration,myid,attemptno,Nretries,neighbourRight)
   end if
 
 end subroutine DumpDistr

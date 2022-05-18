@@ -1,5 +1,6 @@
 subroutine AdvectionXI(Nxi,XI,gp,Nspecies,particle,dt, &
-     neighbourLeft, neighbourRight,comm1d)
+     neighbourLeft, neighbourRight, comm1d, Boundary_I_file, &
+		 Boundary_I, iteration)
 
   use SpecificTypes
   use mpi
@@ -38,6 +39,10 @@ subroutine AdvectionXI(Nxi,XI,gp,Nspecies,particle,dt, &
 
   type(bufferedDistribution) send_right, send_left, &
        receive_right, receive_left
+
+  double precision Boundary_I_file(140,200,100), Boundary_I(200,100) 
+	integer iteration     
+
 
 ! Allocate communication buffers if necessary
   fnodesize = sum( particle(:)%Nvz * particle(:)%Nmu )
@@ -164,6 +169,8 @@ subroutine AdvectionXI(Nxi,XI,gp,Nspecies,particle,dt, &
 
   dxi = XI(2)-XI(1)
  
+!	write(*,*) 'Haaallo?'
+
 ! Compute the new distribution function for all points that are not 
 ! affected by the other processes.
   ixistart = 3
@@ -228,8 +235,10 @@ subroutine AdvectionXI(Nxi,XI,gp,Nspecies,particle,dt, &
            elseif (neighbourRight <0) then
               call UpdateXInoShift(Nspecies, ii, Nvz, Nxi, Nmu, &
                    ixistart, ixiend-1, dxi, dt, gp, particle, temp)
+									 
               call UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
-                   dxi, dt, gp, particle, temp)
+                   dxi, dt, gp, particle, temp, Boundary_I_file, Boundary_I, &
+									 iteration)
            else
               call UpdateXInoShift(Nspecies, ii, Nvz, Nxi, Nmu, &
                    ixistart, ixiend, dxi, dt, gp, particle, temp)
@@ -752,7 +761,7 @@ end subroutine UpdateXInoShiftLeftmost
 
 !------------------------------------------------------------------------
 subroutine UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
-     dxi, dt, gp, particle, temp)
+     dxi, dt, gp, particle, temp, Boundary_I_file, Boundary_I, iteration)
 
   use SpecificTypes
   implicit none
@@ -776,6 +785,52 @@ subroutine UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
   double precision alfa, a0, a1
   double precision df1, phi0, phi1
 
+  double precision Boundary_I_file(140,200,100), Boundary_I(200,100)
+	double precision time, remainder
+	logical updateIonosphere
+	integer iteration, index4update, iteration_uglyfix
+
+	! Test if it is time for ionospheric update
+	time = dt*iteration
+	updateIonosphere = .false.
+	if (ii == 1) then
+		if (iteration <= 2.0e3) then
+			remainder = mod(iteration,40)
+			if (remainder == 0.0d0) then
+				index4update = iteration / 40
+				updateIonosphere = .true.
+				write(*,*) 'time to update! t1 =', time
+			end if
+		else if (iteration <= 6.0d3) then
+			remainder = mod(iteration,80)
+			if (remainder == 0.0d0) then
+				index4update = 2.5d1 + iteration / 80
+				updateIonosphere = .true.
+				write(*,*) 'time to update! t2 =', time
+			end if
+		else if (iteration <= 1.4d4) then
+         !iteration_uglyfix = iteration - 80
+			!remainder = mod(iteration_uglyfix,160)
+			remainder = mod(iteration,200)
+			if (remainder == 0.0d0) then
+				index4update = 3.0d1 + iteration / 200
+				updateIonosphere = .true.
+				write(*,*) 'time to update! t3 =', time
+			end if
+		end if
+	end if
+
+	if (updateIonosphere) then
+		do imu = 1,Nmu
+			do ivz = 1, Nvz
+            !write(*,*) index4update
+				Boundary_I(ivz,imu) = Boundary_I_file(index4update,ivz,imu)
+			end do
+		end do
+!		write(*,*) 'UPDATE SUCCESSFUL'
+	end if
+
+
   ixi = Nxi
   do imu = 1, Nmu
      do ivz = 1, Nvz
@@ -793,7 +848,6 @@ subroutine UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
                 alfa,a0,a1,particle(ii)%maxf0(imu))
            phi1 = Flux(df1,particle(ii)%node(ixi)%f(ivz,imu), &
                 0.0d0, alfa,a0,a1,particle(ii)%maxf0(imu))
-!!$           phi1 = particle(ii)%node(ixi)%f(ivz,imu) * alfa
 
            ! compute the new approximation
            temp(ii)%f(ivz,imu,ixi) = &
@@ -817,7 +871,14 @@ subroutine UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
            ! compute the new approximation
            temp(ii)%f(ivz,imu,ixi) = &
                 particle(ii)%node(ixi)%f(ivz,imu) - (phi1 - phi0)
+			  ! add the ionospheric response to the magnetospheric electrons	----------------------------------		
+		  	  if (ii == 1) then
+				  !temp(ii)%f(ivz,imu,ixi) = temp(ii)%f(ivz,imu,ixi) + &
+												!Boundary_I(1,ivz,imu)
+				  temp(ii)%f(ivz,imu,ixi) = Boundary_I(ivz,imu)
+        	  end if	
         end if
+
      end do
   end do
 

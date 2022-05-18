@@ -26,7 +26,7 @@ MAXF0UPDATEOBJECTS = SpecificTypes.o Maxf0update.o Dump.o Initial.o
 #--------
 
 #--------
-KETCHUPL7TARGET = l7/ketchup
+KETCHUPL7TARGET = l7/ketchup_coupling
 REGENERATEL7TARGET = l7/regenerate_ketchup
 MAXF0UPDATETARGET = maxf0update
 #--------

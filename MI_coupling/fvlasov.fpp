@@ -90,6 +90,12 @@ program ketchup
   parameter(Nretries = 10)
 
 
+! ionospheric boundary
+  double precision Boundary_I_file(140,200,100), Boundary_I(200,100), &
+          Boundary_I_file_2D(28000,100)
+  integer i1,index1,imu,ivz
+
+
 ! Initialise mpi
   call MPI_INIT(ierr)
   call MPI_COMM_RANK(MPI_COMM_WORLD, myid, ierr)
@@ -100,7 +106,37 @@ program ketchup
      write (*,*) '*************************************'
      write (*,*) '****           ketchup           ****'
      write (*,*) '*************************************'
-  end if
+	end if
+
+  !Read the incoming flux and allocate it
+  !open(unit=1,file='f_response.txt',access='sequential',form='unformatted',status='old')
+  open(unit=1,file='f_response.bin',access="stream",form="unformatted")
+	!write (*,*) 'Opening file : success'
+	do imu = 1,100
+		do ivz=1,28000
+  		!read(1) (Boundary_I_file_2D(ivz,imu), imu=1,100)
+			read(1) Boundary_I_file_2D(ivz,imu)
+		end do
+	end do
+  !write (*,*) 'Reading file : success'
+  close(1)
+  !write (*,*) 'Closing file : success'
+  !write (*,*) '-------------------------------------'
+  
+
+	!write(*,*) 'Resize matrix from file ...'
+	do i1 = 1,140
+			do imu = 1,100
+						do ivz = 1,200
+						index1 = (i1 - 1) * 200 + ivz
+						Boundary_I_file(i1,ivz,imu) = Boundary_I_file_2D(index1,imu) 
+						end do
+			end do
+	end do
+	!write(*,*) '... done!'
+	!write(*,*) 'C(65,6) =', Boundary_I_file_2D(265,6)
+	!write(*,*) 'C(65,6) =', Boundary_I_file(2,65,6)
+	
 
 ! Read input data, allocate, and initialise
   ! General parameters
@@ -449,7 +485,7 @@ program ketchup
 
 ! Dump the initial distribution
      attempts = 0
-     call DumpDistr(Nxi_local,Nspecies,particle,0,myid,attempts,Nretries)
+     call DumpDistr(Nxi_local,Nspecies,particle,0,myid,attempts,Nretries,neighbourRight)
 #ifdef _DEBUG_
      write (*,*) 'Done with DumpDistr.  myid=', myid
 #endif
@@ -614,8 +650,9 @@ program ketchup
 #ifdef _TIMING_
      starttime = MPI_WTIME()
 #endif
+     ! write(*,*) 'Hallo?'
      call AdvectionXI(Nxi_local,XI_local,gp_local,Nspecies,particle,dt, &
-          neighbourLeft, neighbourRight,comm1d)
+          neighbourLeft, neighbourRight, comm1d, Boundary_I_file, Boundary_I, iteration)
 #ifdef _TIMING_
      endtime = MPI_WTIME()
      if (myid .eq. 0) then
@@ -642,7 +679,7 @@ program ketchup
           iteration>=dump_start ) .or. iteration == Niter ) then
         attempts = 0
         call DumpDistr(Nxi_local,Nspecies,particle,iteration,myid, &
-             attempts,Nretries)
+             attempts,Nretries,neighbourRight)
      end if
      ! reduced distribution
      if ( modulo(iteration,dump_period_distr_1v)==0 .and. &
