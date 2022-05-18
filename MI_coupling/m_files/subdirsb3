@@ -1,0 +1,12 @@
+mkdir dumps
+mkdir outp
+mkdir outp/datfiles
+mkdir outp/datfiles/Bfield
+mkdir outp/datfiles/Efield
+mkdir outp/datfiles/current
+mkdir outp/datfiles/density
+mkdir outp/datfiles/fzvz
+mkdir outp/datfiles/fzvzmu
+mkdir outp/datfiles/g
+mkdir outp/datfiles/gravity
+mkdir outp/datfiles/fBC
