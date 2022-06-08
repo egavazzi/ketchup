@@ -20,10 +20,9 @@ dt = finding_var('dt')
 const_a = finding_var('const_a')
 nbr_iterations = finding_var('Niter')
 
-
-dt = 1e-5
-const_a = 200
-nbr_iterations = 800000
+% dt = 1e-5
+% const_a = 200
+% nbr_iterations = 800000
 
 n0R = 1.0e9;
 n0L = 3.0e5;
@@ -62,14 +61,6 @@ if save_input
   fprintf(fileID,'a = %d \n',const_a);
   fclose(fileID);
 end
-%%
-% inputb6
-% load outp/g.mat
-
-% % construct xi-vectors
-% dxi=1/Nz;
-% xicorn=dxi*[0:Nz];
-% xi=0.5*(xicorn(1:end-1) + xicorn(2:end));
 %% Setting time steps to plot
 t_to_plot = [5 10 15 20]; % CHOOSE TIME TO PLOT (in s)
 
@@ -92,29 +83,36 @@ set(gcf,'WindowState','maximized')
 
 
 subplot(2,1,1)
-% plot(z,Efieldmatrix.')
 plot(z,Efieldmatrix(index_t_to_plot,:),'linewidth',2)
 set(gca,'fontname','times','fontsize',14)
-ylabel('E','fontname','times','fontsize',18)
+ylabel('E (V/km)','fontname','times','fontsize',18)
 xline(z(end),'--')
 for i = 1:length(index_t_to_plot)
   legend_str(i) = {[num2str(timestepsEfield(index_t_to_plot(i))*dt) 's']};
 end
 legend(legend_str,'location','northwest')
+xlim([0 5.5e7])
+% ylim([0 2e-4])
+grid on
+xticklabels('')
+xticks(0:0.5e7:5.5e7)
 
 
 subplot(2,1,2)
-% plot(zcorn,potentialmatrix.')
 plot(zcorn,potentialmatrix(index_t_to_plot,:),'linewidth',2)
 set(gca,'fontname','times','fontsize',14)
-xlabel('z','fontname','times','fontsize',18)
-ylabel('Potential','fontname','times','fontsize',18)
+xlabel('z (m)','fontname','times','fontsize',18)
+ylabel('Potential (V)','fontname','times','fontsize',18)
 xline(z(end),'--')
 for i = 1:length(index_t_to_plot)
   legend_str(i) = {[num2str(timestepsEfield(index_t_to_plot(i))*dt) 's']};
 end
 legend(legend_str,'location','northwest')
 sgtitle(['\epsilon_r = ',num2str(epsilon_r,3)])
+grid on
+xlim([0 5.5e7])
+xticks(0:0.5e7:5.5e7)
+
 
 if print_fig
   print('-dpng','-painters',fullfile(results_dir,'E_and_Vp_over_z.png'))
@@ -131,9 +129,8 @@ if length(sn)==3
   for jj=1:sn(1)
     subplot(sn(1),1,jj)
     hold on
-    for ii=index_t_to_plot(1:1:length(index_t_to_plot))%1:sn(3)
-%       plot(z,densitymatrix(jj,:,ii),colours(mod(ii-1,5)+1))
-        semilogy(z,densitymatrix(jj,:,ii),'linewidth',2)%,colours(mod(ii-1,5)+1))
+    for ii=index_t_to_plot(1:1:length(index_t_to_plot))
+        semilogy(z,densitymatrix(jj,:,ii),'linewidth',2)
     end
   end
 
@@ -169,7 +166,6 @@ load outp/current.mat
 figure(3)
 set(gcf,'paperpositionmode','auto')
 set(gcf,'WindowState','maximized')
-% plot(z,currentmatrix.')
 plot(z,currentmatrix(index_t_to_plot,:),'linewidth',2)
 set(gca,'fontname','times','fontsize',14)
 ylabel('i','fontname','times','fontsize',18)
@@ -187,6 +183,9 @@ if print_fig
   print('-depsc','-painters',fullfile(results_dir,'Current_over_z.eps'))
 end
 %% --- Efield(z,t) --- %
+load outp/Efield.mat
+pt=[timestepsEfield timestepsEfield(end)+dt]*dt;
+
 figure(5)
 set(gcf,'paperpositionmode','auto','renderer','zbuffer')
 set(gcf,'WindowState','maximized')
@@ -200,10 +199,9 @@ pp=(Efieldmatrix(trange,zrange).').*1000;
 ss=size(pp);
 pp=[[pp zeros(ss(1),1)];zeros(1,ss(2)+1)];
 pz=zcorn(zrange); pz = [pz (pz(end)+dz(length(pz)))];
-pt=[timestepsEfield timestepsEfield(end)+dt]*dt; %redondant (already done in "time to plot" section)
 dt_timestepsEfield = abs(dt*(timestepsEfield(1)-timestepsEfield(2)));
-pt2 = pt(trange); pt2 = [pt2(1)-dt_timestepsEfield pt2];
-surf(pt2,pz,pp)
+pt = pt(trange); pt = [pt(1)-dt_timestepsEfield pt];
+surf(pt,pz,pp)
 clear pp
 set(gca,'fontname','times','fontsize',14)
 view(2)
@@ -212,7 +210,7 @@ axis([min(pt) max(pt) min(pz) max(pz)])
 shading flat
 hh=colorbar;
 set(hh,'fontname','times','fontsize',14)
-hh.Label.String = 'E [mV/m]';
+hh.Label.String = 'E [V/km]';
 hh.Label.FontSize = 18;
 colormap(jet);
 caxis([-2 1])
