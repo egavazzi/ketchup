@@ -1,4 +1,5 @@
 # ignore experiments files
 l7/*
+!l7/.gitkeep
 # ignore runnable files
 *.o
