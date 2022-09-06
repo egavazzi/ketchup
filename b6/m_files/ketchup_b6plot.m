@@ -16,13 +16,13 @@ epsilon_0 = 8.85418781762039e-12;
 e_charge = 1.602176487e-19;
 
 % This is to get the variables of interest from the file inputb6
-dt = finding_var('dt')
-const_a = finding_var('const_a')
-nbr_iterations = finding_var('Niter')
+% dt = finding_var('dt')
+% const_a = finding_var('const_a')
+% nbr_iterations = finding_var('Niter')
 
-% dt = 1e-5
-% const_a = 200
-% nbr_iterations = 800000
+dt = 2e-5
+const_a = 100
+nbr_iterations = 800000
 
 n0R = 1.0e9;
 n0L = 3.0e5;
@@ -62,7 +62,7 @@ if save_input
   fclose(fileID);
 end
 %% Setting time steps to plot
-t_to_plot = [5 10 15 20]; % CHOOSE TIME TO PLOT (in s)
+t_to_plot = [40]; % CHOOSE TIME TO PLOT (in s)
 
 load outp/Efield.mat
 pt=[timestepsEfield timestepsEfield(end)+dt]*dt;
@@ -77,7 +77,7 @@ potentialmatrix =[zeros(length(timestepsEfield),1) ...
                -cumsum(Efieldmatrix.*(ones(length(timestepsEfield),1)*dz),2)];
 
 colours ='brkcm';
-figure(1)
+figure()
 set(gcf,'paperpositionmode','auto')
 set(gcf,'WindowState','maximized')
 
@@ -91,7 +91,7 @@ for i = 1:length(index_t_to_plot)
   legend_str(i) = {[num2str(timestepsEfield(index_t_to_plot(i))*dt) 's']};
 end
 legend(legend_str,'location','northwest')
-xlim([0 5.5e7])
+xlim([4e7 5.5e7])
 % ylim([0 2e-4])
 grid on
 xticklabels('')
@@ -121,7 +121,7 @@ end
 %% --- Density --- %
 load outp/density.mat
 
-figure(2);clf
+figure();clf
 set(gcf,'paperpositionmode','auto')
 set(gcf,'WindowState','maximized')
 sn = size(densitymatrix);
@@ -140,7 +140,7 @@ if length(sn)==3
     set(gca,'fontname','times','fontsize',14)
     ylabel('n','fontname','times','fontsize',18)
     title(['Species ' num2str(jj)],'fontname','times','fontsize',16)
-%     axis([0 5.5e7 -inf inf],'autoy')
+    axis([4e7 5.5e7 -inf inf],'autoy')
     xline(z(end),'--')
     for i = 1:length(index_t_to_plot)
       legend_str(i) = {[num2str(timestepsdensity(index_t_to_plot(i))*dt) 's']};
@@ -186,19 +186,19 @@ end
 load outp/Efield.mat
 pt=[timestepsEfield timestepsEfield(end)+dt]*dt;
 
-figure(5)
+figure()
 set(gcf,'paperpositionmode','auto','renderer','zbuffer')
-set(gcf,'WindowState','maximized')
+% set(gcf,'WindowState','maximized')
 L=zmax-zmin;
-if ~exist('hidefraction')
-  hidefraction=0.01;
-end
+% if ~exist('hidefraction')
+  hidefraction=0.0;
+% end
 zrange = (z>zmin+hidefraction*L & z<zmax-hidefraction*L);
-trange = (pt(1:end-1)>1& pt(1:end-1)<20);
+trange = (pt(1:end-1)>0& pt(1:end-1)<300);
 pp=(Efieldmatrix(trange,zrange).').*1000;
 ss=size(pp);
 pp=[[pp zeros(ss(1),1)];zeros(1,ss(2)+1)];
-pz=zcorn(zrange); pz = [pz (pz(end)+dz(length(pz)))];
+pz=zcorn(zrange); pz = [pz (pz(end)+dz(length(pz)))]; pz = (5.2e7 - pz)/1e3;
 dt_timestepsEfield = abs(dt*(timestepsEfield(1)-timestepsEfield(2)));
 pt = pt(trange); pt = [pt(1)-dt_timestepsEfield pt];
 surf(pt,pz,pp)
@@ -215,9 +215,13 @@ hh.Label.FontSize = 18;
 colormap(jet);
 caxis([-2 1])
 xlabel('t  [s]','fontname','times','fontsize',18)
-ylabel('z  [m]','fontname','times','fontsize',18)
+ylabel('z  [km]','fontname','times','fontsize',18)
 grid off
-title(['\epsilon_r = ',num2str(epsilon_r,3)])
+% title(['\epsilon_r = ',num2str(epsilon_r,3)])
+% 
+% 
+% ylim([0 1000])
+% caxis([-0.01 0.01])
 
 if print_fig
 print('-dpng','-painters',fullfile(results_dir,'Efield_over_z&t.png'))
