@@ -1,6 +1,6 @@
 subroutine AdvectionXI(Nxi,XI,gp,Nspecies,particle,dt, &
      neighbourLeft, neighbourRight, comm1d, Boundary_I_file, &
-		 Boundary_I, iteration)
+	   Boundary_I_file2, Boundary_I, Boundary_I2, iteration)
 
   use SpecificTypes
   use mpi
@@ -40,7 +40,8 @@ subroutine AdvectionXI(Nxi,XI,gp,Nspecies,particle,dt, &
   type(bufferedDistribution) send_right, send_left, &
        receive_right, receive_left
 
-  double precision Boundary_I_file(140,200,100), Boundary_I(200,100) 
+  double precision Boundary_I_file(301,200,100), Boundary_I_file2(301,200,100), &
+      Boundary_I(200,100), Boundary_I2(200,100) 
 	integer iteration     
 
 
@@ -169,8 +170,6 @@ subroutine AdvectionXI(Nxi,XI,gp,Nspecies,particle,dt, &
 
   dxi = XI(2)-XI(1)
  
-!	write(*,*) 'Haaallo?'
-
 ! Compute the new distribution function for all points that are not 
 ! affected by the other processes.
   ixistart = 3
@@ -235,10 +234,9 @@ subroutine AdvectionXI(Nxi,XI,gp,Nspecies,particle,dt, &
            elseif (neighbourRight <0) then
               call UpdateXInoShift(Nspecies, ii, Nvz, Nxi, Nmu, &
                    ixistart, ixiend-1, dxi, dt, gp, particle, temp)
-									 
               call UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
-                   dxi, dt, gp, particle, temp, Boundary_I_file, Boundary_I, &
-									 iteration)
+                   dxi, dt, gp, particle, temp, Boundary_I_file, &
+                   Boundary_I_file2, Boundary_I, Boundary_I2, iteration)
            else
               call UpdateXInoShift(Nspecies, ii, Nvz, Nxi, Nmu, &
                    ixistart, ixiend, dxi, dt, gp, particle, temp)
@@ -761,7 +759,8 @@ end subroutine UpdateXInoShiftLeftmost
 
 !------------------------------------------------------------------------
 subroutine UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
-     dxi, dt, gp, particle, temp, Boundary_I_file, Boundary_I, iteration)
+     dxi, dt, gp, particle, temp, Boundary_I_file, Boundary_I_file2, &
+     Boundary_I, Boundary_I2, iteration)
 
   use SpecificTypes
   implicit none
@@ -785,49 +784,34 @@ subroutine UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
   double precision alfa, a0, a1
   double precision df1, phi0, phi1
 
-  double precision Boundary_I_file(140,200,100), Boundary_I(200,100)
-	double precision time, remainder
+  double precision Boundary_I_file(301,200,100), Boundary_I_file2(301,200,100), &
+            Boundary_I(200,100), Boundary_I2(200,100)
+  double precision time, remainder
 	logical updateIonosphere
-	integer iteration, index4update, iteration_uglyfix
+	integer iteration, index4update
 
 	! Test if it is time for ionospheric update
 	time = dt*iteration
 	updateIonosphere = .false.
 	if (ii == 1) then
-		if (iteration <= 2.0e3) then
-			remainder = mod(iteration,40)
-			if (remainder == 0.0d0) then
-				index4update = iteration / 40
+      if (iteration <= 1.2d4) then
+         remainder = mod(iteration,40)
+         if (remainder == 0.0d0) then
+				index4update = 1 + iteration / 40
 				updateIonosphere = .true.
-				write(*,*) 'time to update! t1 =', time
+				write(*,*) 'time to update! t =', time
+            write(*,*) 'index4update =', index4update
 			end if
-		else if (iteration <= 6.0d3) then
-			remainder = mod(iteration,80)
-			if (remainder == 0.0d0) then
-				index4update = 2.5d1 + iteration / 80
-				updateIonosphere = .true.
-				write(*,*) 'time to update! t2 =', time
-			end if
-		else if (iteration <= 1.4d4) then
-         !iteration_uglyfix = iteration - 80
-			!remainder = mod(iteration_uglyfix,160)
-			remainder = mod(iteration,200)
-			if (remainder == 0.0d0) then
-				index4update = 3.0d1 + iteration / 200
-				updateIonosphere = .true.
-				write(*,*) 'time to update! t3 =', time
-			end if
-		end if
+      end if
 	end if
 
 	if (updateIonosphere) then
 		do imu = 1,Nmu
 			do ivz = 1, Nvz
-            !write(*,*) index4update
 				Boundary_I(ivz,imu) = Boundary_I_file(index4update,ivz,imu)
+        Boundary_I2(ivz,imu) = Boundary_I_file2(index4update,ivz,imu)
 			end do
 		end do
-!		write(*,*) 'UPDATE SUCCESSFUL'
 	end if
 
 
@@ -871,12 +855,17 @@ subroutine UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
            ! compute the new approximation
            temp(ii)%f(ivz,imu,ixi) = &
                 particle(ii)%node(ixi)%f(ivz,imu) - (phi1 - phi0)
-			  ! add the ionospheric response to the magnetospheric electrons	----------------------------------		
-		  	  if (ii == 1) then
-				  !temp(ii)%f(ivz,imu,ixi) = temp(ii)%f(ivz,imu,ixi) + &
-												!Boundary_I(1,ivz,imu)
-				  temp(ii)%f(ivz,imu,ixi) = Boundary_I(ivz,imu)
-        	  end if	
+          ! add the ionospheric response to the magnetospheric electrons		
+            if (ii == 1) then
+              temp(ii)%f(ivz,imu,ixi) = Boundary_I2(ivz,imu)  !402km
+              temp(ii)%f(ivz,imu,ixi-1) = Boundary_I2(ivz,imu)  !405km
+              temp(ii)%f(ivz,imu,ixi-2) = Boundary_I2(ivz,imu)  !408km
+
+              temp(ii)%f(ivz,imu,ixi-3) = Boundary_I(ivz,imu) !412km
+              temp(ii)%f(ivz,imu,ixi-4) = Boundary_I(ivz,imu) !419km
+              temp(ii)%f(ivz,imu,ixi-5) = Boundary_I(ivz,imu) !422km
+              temp(ii)%f(ivz,imu,ixi-6) = Boundary_I(ivz,imu) !425km
+            end if	
         end if
 
      end do

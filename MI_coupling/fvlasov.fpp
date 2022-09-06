@@ -91,9 +91,10 @@ program ketchup
 
 
 ! ionospheric boundary
-  double precision Boundary_I_file(140,200,100), Boundary_I(200,100), &
-          Boundary_I_file_2D(28000,100)
-  integer i1,index1,imu,ivz
+  double precision Boundary_I_file(301,200,100), Boundary_I_file2(301,200,100), &
+          Boundary_I_file_2D(60200,100), Boundary_I_file2_2D(60200,100), &
+					Boundary_I(200,100), Boundary_I2(200,100)
+  integer i1,index,imu,ivz
 
 
 ! Initialise mpi
@@ -108,35 +109,28 @@ program ketchup
      write (*,*) '*************************************'
 	end if
 
-  !Read the incoming flux and allocate it
-  !open(unit=1,file='f_response.txt',access='sequential',form='unformatted',status='old')
+!  Read the incoming flux and allocate it
   open(unit=1,file='f_response.bin',access="stream",form="unformatted")
-	!write (*,*) 'Opening file : success'
+	open(unit=2,file='f_response2.bin',access="stream",form="unformatted")
 	do imu = 1,100
-		do ivz=1,28000
-  		!read(1) (Boundary_I_file_2D(ivz,imu), imu=1,100)
+		do ivz=1,60200
 			read(1) Boundary_I_file_2D(ivz,imu)
+			read(2) Boundary_I_file2_2D(ivz,imu)
 		end do
 	end do
-  !write (*,*) 'Reading file : success'
   close(1)
-  !write (*,*) 'Closing file : success'
-  !write (*,*) '-------------------------------------'
-  
+  close(2)
 
-	!write(*,*) 'Resize matrix from file ...'
-	do i1 = 1,140
-			do imu = 1,100
-						do ivz = 1,200
-						index1 = (i1 - 1) * 200 + ivz
-						Boundary_I_file(i1,ivz,imu) = Boundary_I_file_2D(index1,imu) 
-						end do
-			end do
-	end do
-	!write(*,*) '... done!'
-	!write(*,*) 'C(65,6) =', Boundary_I_file_2D(265,6)
-	!write(*,*) 'C(65,6) =', Boundary_I_file(2,65,6)
-	
+  do i1 = 1,301
+	do imu = 1,100
+		do ivz = 1,200
+               index = (i1 - 1) * 200 + ivz
+               Boundary_I_file(i1,ivz,imu) = Boundary_I_file_2D(index,imu)
+               Boundary_I_file2(i1,ivz,imu) = Boundary_I_file2_2D(index,imu)
+          end do
+     end do
+  end do
+
 
 ! Read input data, allocate, and initialise
   ! General parameters
@@ -652,7 +646,8 @@ program ketchup
 #endif
      ! write(*,*) 'Hallo?'
      call AdvectionXI(Nxi_local,XI_local,gp_local,Nspecies,particle,dt, &
-          neighbourLeft, neighbourRight, comm1d, Boundary_I_file, Boundary_I, iteration)
+          neighbourLeft, neighbourRight, comm1d, Boundary_I_file, Boundary_I_file2, &
+					Boundary_I, Boundary_I2, iteration)
 #ifdef _TIMING_
      endtime = MPI_WTIME()
      if (myid .eq. 0) then
