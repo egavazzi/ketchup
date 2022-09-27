@@ -818,6 +818,8 @@ else
 end % end if exist('datfiles/lock.density')
 
 
+%% ===================================================================== %%
+
 % --- distribution function f(z,vz,mu) --- %
 % one file per timestep, containing a structured array of all species,
 % with a three-dimensional array for f(z,vz,mu) in each.
