@@ -18,25 +18,29 @@ clear E_integral
 % for ii = length(zcorn):-1:1
 %   E_integral(:,ii) = trapz(zcorn(end:-1:ii),Efieldmatrix(:,end:-1:ii),2);
 % end
-E_integral(:,:) = - cumsum(Efieldmatrix.*dz,2,'reverse');
+pt=[timestepsEfield timestepsEfield(end)+dt]*dt;
+E_integral(:,:) = - cumsum(Efieldmatrix.*dz,2,'reverse'); % in (V)
 
 colours ='brkcm';
-figure(1)
+figure()
 set(gcf,'paperpositionmode','auto')
 figPHigh = [1014, 226, 1000, 800];
 set(gcf,'position',figPHigh)
 set(gcf,'WindowState','maximized')
-doMovie = 0;
-try
-  vidObj = VideoWriter('Integral_Efield_over_iono__cumsum.avi');
-%   vidObj.Quality = 100;
-  open(vidObj);
-  doMovie = 1;
-catch
-  doMovie = 0;
-  disp(['Failed to initialize VideoWriter Object for movie: ',movieOut])
-end
 
+doMovie = 0;
+
+if doMovie
+  try
+    vidObj = VideoWriter('Integral_Efield_over_iono.avi');
+  %   vidObj.Quality = 100;
+    open(vidObj);
+    doMovie = 1;
+  catch
+    doMovie = 0;
+    disp(['Failed to initialize VideoWriter Object for movie: ',movieOut])
+  end
+end
 
 t = tiledlayout(1,3);
 
@@ -63,7 +67,7 @@ clear pp
 set(gca,'fontname','times','fontsize',14)
 view(2)
 % axis([min(pt2) max(pt2) 4.75e7 5.195e7])
-axis([min(pt2) max(pt2) 400 4500])
+axis([min(pt2) max(pt2) 400 5000])
 shading flat
 hh=colorbar;
 set(hh,'fontname','times','fontsize',14)
@@ -83,39 +87,38 @@ for i_t = 1:numel(pt)-1
   % plot of E over space
   nexttile(1)
   
-%   plot((Efieldmatrix(1,(1:end)) - Efieldmatrix(i_t,(1:end))).*1000,z(1:end)/1000,'linewidth',2)
+  plot((Efieldmatrix(1,(1:end)) - Efieldmatrix(i_t,(1:end))).*1000,z(1:end)/1000,'linewidth',2)
+  set(gca,'fontname','times','fontsize',14)
+  ylabel('z [km]','fontname','times','fontsize',18)
+  xlabel('\DeltaE [V/km]','fontname','times','fontsize',18)
+  legend('Efield','location','northwest')
+  ylim([400 3000])
+  xlim([-1 1])
+  grid on
+   
+%   plot(E_integral(i_t,(1:end)),z(1:end)/1000,'linewidth',2)
 %   set(gca,'fontname','times','fontsize',14)
 %   ylabel('z [km]','fontname','times','fontsize',18)
-%   xlabel('\DeltaE [V/km]','fontname','times','fontsize',18)
+%   xlabel('E [V/km]','fontname','times','fontsize',18)
 %   legend('Efield','location','northwest')
-%   ylim([400 4500])
-%   xlim([-1e-1 1e-1])
+%   ylim([400 5000])
 %   grid on
-   
+
 %   plot(Efieldmatrix(i_t,(1:end)).*1000,z(1:end)/1000,'linewidth',2)
 %   set(gca,'fontname','times','fontsize',14)
 %   ylabel('z [km]','fontname','times','fontsize',18)
 %   xlabel('E [V/km]','fontname','times','fontsize',18)
 %   legend('Efield','location','northwest')
-%   ylim([400 4500])
-%   xlim([-1e-1 1e-1])
+%   ylim([400 2000])
+%   xlim([-1 10])
 %   grid on
-
-  plot(E_integral(i_t,(1:end)),z(1:end)/1000,'linewidth',2)
-  set(gca,'fontname','times','fontsize',14)
-  ylabel('z [km]','fontname','times','fontsize',18)
-  xlabel('E [V/km]','fontname','times','fontsize',18)
-  legend('Efield','location','northwest')
-  ylim([400 4500])
-  xlim([-10 100])
-  grid on
 
   
   nexttile(2,[1 2])
   delete(X)
   X = xline(pt(i_t));
   
-  title(t,[num2str(pt(i_t),'%.3f'),' s'],'FontSize',16);
+  title(['t =',num2str(pt(i_t),'%.3f'),' s'],'FontSize',16);
 
   drawnow
   if doMovie == 1
