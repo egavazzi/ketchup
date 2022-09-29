@@ -1,3 +1,5 @@
+## OLD README
+
 This ketchup version b6, submitted as online supplementary material with 
 the article 'Vlasov simulations of parallel potential drops' in Annales 
 Geophysicae.

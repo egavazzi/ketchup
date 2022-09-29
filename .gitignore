@@ -7,8 +7,10 @@ MI_coupling/l7/*
 # and a model for experiment folder structure
 !b6/l7/model
 
-# ignore runnable files
+# ignore compilation files
 *.o
+*maxf0update
+*specifictypes.mod
 
 # ignore vscode settings folder
 .vscode/*
