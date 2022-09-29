@@ -1,5 +1,6 @@
 subroutine AdvectionXI(Nxi,XI,gp,Nspecies,particle,dt, &
-     neighbourLeft, neighbourRight,comm1d)
+     neighbourLeft, neighbourRight, comm1d, Boundary_I_file, &
+	   Boundary_I_file2, Boundary_I, Boundary_I2, iteration)
 
   use SpecificTypes
   use mpi
@@ -38,6 +39,11 @@ subroutine AdvectionXI(Nxi,XI,gp,Nspecies,particle,dt, &
 
   type(bufferedDistribution) send_right, send_left, &
        receive_right, receive_left
+
+  double precision Boundary_I_file(301,200,100), Boundary_I_file2(301,200,100), &
+      Boundary_I(200,100), Boundary_I2(200,100) 
+	integer iteration     
+
 
 ! Allocate communication buffers if necessary
   fnodesize = sum( particle(:)%Nvz * particle(:)%Nmu )
@@ -229,7 +235,8 @@ subroutine AdvectionXI(Nxi,XI,gp,Nspecies,particle,dt, &
               call UpdateXInoShift(Nspecies, ii, Nvz, Nxi, Nmu, &
                    ixistart, ixiend-1, dxi, dt, gp, particle, temp)
               call UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
-                   dxi, dt, gp, particle, temp)
+                   dxi, dt, gp, particle, temp, Boundary_I_file, &
+                   Boundary_I_file2, Boundary_I, Boundary_I2, iteration)
            else
               call UpdateXInoShift(Nspecies, ii, Nvz, Nxi, Nmu, &
                    ixistart, ixiend, dxi, dt, gp, particle, temp)
@@ -752,7 +759,8 @@ end subroutine UpdateXInoShiftLeftmost
 
 !------------------------------------------------------------------------
 subroutine UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
-     dxi, dt, gp, particle, temp)
+     dxi, dt, gp, particle, temp, Boundary_I_file, Boundary_I_file2, &
+     Boundary_I, Boundary_I2, iteration)
 
   use SpecificTypes
   implicit none
@@ -776,6 +784,37 @@ subroutine UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
   double precision alfa, a0, a1
   double precision df1, phi0, phi1
 
+  double precision Boundary_I_file(301,200,100), Boundary_I_file2(301,200,100), &
+            Boundary_I(200,100), Boundary_I2(200,100)
+  double precision time, remainder
+	logical updateIonosphere
+	integer iteration, index4update
+
+	! Test if it is time for ionospheric update
+	! time = dt*iteration
+	! updateIonosphere = .false.
+	! if (ii == 1) then
+   !    if (iteration <= 1.2d4) then
+   !       remainder = mod(iteration,40)
+   !       if (remainder == 0.0d0) then
+	! 			index4update = 1 + iteration / 40
+	! 			updateIonosphere = .true.
+	! 			write(*,*) 'time to update! t =', time
+   !          write(*,*) 'index4update =', index4update
+	! 		end if
+   !    end if
+	! end if
+
+	! if (updateIonosphere) then
+	! 	do imu = 1,Nmu
+	! 		do ivz = 1, Nvz
+	! 			Boundary_I(ivz,imu) = Boundary_I_file(index4update,ivz,imu)
+   !          Boundary_I2(ivz,imu) = Boundary_I_file2(index4update,ivz,imu)
+	! 		end do
+	! 	end do
+	! end if
+
+
   ixi = Nxi
   do imu = 1, Nmu
      do ivz = 1, Nvz
@@ -793,7 +832,6 @@ subroutine UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
                 alfa,a0,a1,particle(ii)%maxf0(imu))
            phi1 = Flux(df1,particle(ii)%node(ixi)%f(ivz,imu), &
                 0.0d0, alfa,a0,a1,particle(ii)%maxf0(imu))
-!!$           phi1 = particle(ii)%node(ixi)%f(ivz,imu) * alfa
 
            ! compute the new approximation
            temp(ii)%f(ivz,imu,ixi) = &
@@ -817,7 +855,19 @@ subroutine UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
            ! compute the new approximation
            temp(ii)%f(ivz,imu,ixi) = &
                 particle(ii)%node(ixi)%f(ivz,imu) - (phi1 - phi0)
+          ! add the ionospheric response to the magnetospheric electrons		
+            ! if (ii == 1) then
+            !   temp(ii)%f(ivz,imu,ixi) = Boundary_I2(ivz,imu)  !402km
+            !   temp(ii)%f(ivz,imu,ixi-1) = Boundary_I2(ivz,imu)  !405km
+            !   temp(ii)%f(ivz,imu,ixi-2) = Boundary_I2(ivz,imu)  !408km
+
+            !   temp(ii)%f(ivz,imu,ixi-3) = Boundary_I(ivz,imu) !412km
+            !   temp(ii)%f(ivz,imu,ixi-4) = Boundary_I(ivz,imu) !419km
+            !   temp(ii)%f(ivz,imu,ixi-5) = Boundary_I(ivz,imu) !422km
+            !   temp(ii)%f(ivz,imu,ixi-6) = Boundary_I(ivz,imu) !425km
+            ! end if	
         end if
+
      end do
   end do
 

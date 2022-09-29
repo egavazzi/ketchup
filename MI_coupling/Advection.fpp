@@ -857,7 +857,7 @@ subroutine UpdateXInoShiftRightmost(Nspecies, ii, Nvz, Nxi, Nmu, &
                 particle(ii)%node(ixi)%f(ivz,imu) - (phi1 - phi0)
           ! add the ionospheric response to the magnetospheric electrons		
             if (ii == 1) then
-              temp(ii)%f(ivz,imu,ixi) = Boundary_I2(ivz,imu)  !402km
+              temp(ii)%f(ivz,imu,ixi)   = Boundary_I2(ivz,imu)  !402km
               temp(ii)%f(ivz,imu,ixi-1) = Boundary_I2(ivz,imu)  !405km
               temp(ii)%f(ivz,imu,ixi-2) = Boundary_I2(ivz,imu)  !408km
 

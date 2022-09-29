@@ -1,0 +1,14 @@
+# ignore experiments files
+b6/l7/*
+MI_coupling/l7/*
+
+# but keep the MI/l7/ folder
+!MI_coupling/l7/.gitkeep
+# and a model for experiment folder structure
+!b6/l7/model
+
+# ignore runnable files
+*.o
+
+# ignore vscode settings folder
+.vscode/*
