@@ -4,7 +4,7 @@ This is a time-dependent electrostatic Vlasov simulations of double layers (DL) 
 
 The code is seperated in two folders:
 - `b6/` which is almost identical to the code published as online supplementary material with the article of [Gunell et al. (2013)](https://doi.org/10.5194/angeo-31-1227-2013).
-- `MI_coupling/` which is a modified version of the `b6/` code that supports an input from a file at the ionospheric boundary. The ionospheric response can typically be calculated using the time-dependent electron transport [AURORA](https://github.com/egavazzi/AURORA) model.
+- `MI_coupling/` which is a modified version of the `b6/` code that supports an input from a file at the ionospheric boundary. The ionospheric response can typically be calculated using the time-dependent electron transport [AURORA](https://github.com/egavazzi/AURORA) model described in [Gustavsson, B. (2022)](https://doi.org/10.1029/2019JA027608)
 
 <br />
 
