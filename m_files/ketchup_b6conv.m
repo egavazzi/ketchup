@@ -820,7 +820,8 @@ end % end if exist('datfiles/lock.density')
 
 %% ===================================================================== %%
 
-% --- distribution function f(z,vz,mu) --- %
+%% --- distribution function f(z,vz,mu) --- %
+tic
 % one file per timestep, containing a structured array of all species,
 % with a three-dimensional array for f(z,vz,mu) in each.
 
@@ -870,7 +871,7 @@ else
               procid = str2num(dd(ii).name(18:21));
               Nprocs = max(Nprocs,procid);
               if strcmp(dd(ii).name(17:21),'p0000')
-                startfiles = [startfiles ii];
+                startfiles = [startfiles ii]
               end
             end
           end
@@ -880,9 +881,9 @@ else
 
       % To prevent attempts to process files that are being written we wait
       % twenty seconds if there are less than two time steps to process.
-      if length(startfiles)<2 & length(startfiles)>0 & ~(Nprocs<Nprocsref)
-        pause(20)
-      end
+      % if length(startfiles)<2 & length(startfiles)>0 & ~(Nprocs<Nprocsref)
+      %   pause(20)
+      % end
 
       if length(startfiles)>0 & ~(Nprocs<Nprocsref)
         for ii = startfiles
@@ -941,7 +942,7 @@ else
                'zmin','zmax','Nspecies','voltage')
 
 % $$$       system(['rm ' infile(1:30) '??p*.ketchup.dat']);
-          delete([infile(1:30) '*p*.ketchup.dat']);
+          % delete([infile(1:30) '*p*.ketchup.dat']);
 
           if ~absolutelynomessages
             disp(['fzvzmu: timestep ' num2str(thistimestep) ' done!'])
@@ -957,9 +958,146 @@ else
     end % end try
   end
 end % end if exist('datfiles/lock.fzvzmu')
+toc
 
+%% --- distribution files at the ionospheric boundary --- %
+tic
+% same as above but only for the two points closest to the ionospheric boundary
 
-% --- Reduced distribution files --- %
+% Prevent two processes from performing simultaneous conversions
+if exist([pwd '/datfiles/lock.fzvzmu_IonoBoundary'])
+  if ~absolutelynomessages
+    disp('Another process is already working on this directory.')
+    disp('If this is not the case, remove the file')
+    disp([pwd '/datfiles/lock.fzvzmu_IonoBoundary'])
+  end
+else
+  all_is_fine=logical(0);
+  try
+    dlmwrite('datfiles/lock.fzvzmu_IonoBoundary',dummy,'')
+    fid=fopen('datfiles/lock.fzvzmu_IonoBoundary','r');
+    lock=textscan(fid,'%s');
+    fclose(fid);
+    if strcmp(dummy,lock{1})
+      all_is_fine=logical(1);
+    end
+  catch
+    all_is_fine=logical(0);
+  end
+
+  if all_is_fine
+    try
+      dd=dir('datfiles/fzvzmu_IonoBoundary');
+      fzvzmustruct=struct();
+      for ii=1:Nspecies
+        fzvzmustruct(ii).timestep=0;
+      end
+
+      % pick out the files containing species 1 and process 0. 
+      % Then start the loop.
+      for speciesnumber=Nspecies:-1:1
+        if ~isnan(particle(speciesnumber).mass) & ...
+              ~isinf(particle(speciesnumber).mass)
+          break
+        end
+      end
+      startfiles=[];Nprocs=0;
+      for ii=3:length(dd)
+        if length(dd(ii).name)>=20
+          if strcmp(dd(ii).name(1:8),'fzvzmuIB')
+            if strcmp(dd(ii).name(17:18),num2str(speciesnumber,'%0.2d')) & ...
+                  strcmp(dd(ii).name(24:end),'.ketchup.dat')
+              procid = str2num(dd(ii).name(20:23));
+              Nprocs = max(Nprocs,procid);
+              startfiles = [startfiles ii];
+            end
+          end
+        end
+      end
+      Nprocs = Nprocs + 1; % Numbers from 0 to Nprocs
+
+      % To prevent attempts to process files that are being written we wait
+      % twenty seconds if there are less than two time steps to process.
+      % if length(startfiles)<2 & length(startfiles)>0 & ~(Nprocs<Nprocsref)
+      %   pause(20)
+      % end
+      
+      if ~(Nprocs<Nprocsref)
+        for ii = startfiles
+          % If not all files of the largest non-infinite mass species
+          % number exist, that is an error
+          infilesexistnot = logical(zeros(1,Nprocs));
+          for jj = 0:Nprocs-1
+            infilesexistnot(jj+1) = ...
+                ~exist(['datfiles/fzvzmu_IonoBoundary/' dd(ii).name(1:16) ...
+                        num2str(speciesnumber,'%0.2d') ...
+                        'p' num2str(jj,'%0.4d') '.ketchup.dat']);
+          end        
+%           if sum(infilesexistnot)>0
+%             error(['fzvzmu: infilesexistnot=',num2str(infilesexistnot)])
+%           end
+        
+          thistimestep=str2num(dd(ii).name(9:15));
+          for thisspecies = 1:Nspecies
+            if ~isnan(particle(thisspecies).mass) & ...
+                  ~isinf(particle(thisspecies).mass)
+              fzvzmustruct(thisspecies).timestep=thistimestep;
+              fzvzmustruct(thisspecies).f = ...
+                  zeros(particle(thisspecies).Nvz,particle(thisspecies).Nmu,2);
+              ivzoffset=[];fcounter=1;
+
+              for jj = Nprocs-1
+                infile = ['datfiles/fzvzmu_IonoBoundary/' dd(ii).name(1:16) ...
+                          num2str(thisspecies,'%0.2d') ...
+                          'p' num2str(jj,'%0.4d') '.ketchup.dat'];
+                fid=fopen(infile,'r');
+                if fid<0
+                  error(['Error reading file ' infile])
+                end
+
+                for kk = Nz-1:Nz
+                  instruct = textscan(fid,'%*s%*s%f',1);
+                  if isempty(instruct{1}), break, end
+                  ivzoffset=[ivzoffset instruct{1}];
+                  instruct = textscan(fid,'%f');
+                  fzvzmustruct(thisspecies).f(:,:,fcounter) = ...
+                      reshape(instruct{1}, [particle(thisspecies).Nmu ...
+                                      particle(thisspecies).Nvz]).';
+                  fcounter = fcounter + 1;
+                end
+      
+                fclose(fid);
+              end
+              fzvzmustruct(thisspecies).ivzoffset = ivzoffset;
+            end
+          end
+  
+          outfile = ['fzvzmuIB' num2str(thistimestep,'%0.7i') '.mat'];
+          save(outfile,'-v7.3','fzvzmustruct','thistimestep','particle', ...
+               'Nz','dz','zcorn','z','dt','Niter','dump_period_fields', ...
+               'dump_period_distr','dump_start','shift_test_period', ...
+               'zmin','zmax','Nspecies','voltage')
+
+% $$$       system(['rm ' infile(1:30) '??p*.ketchup.dat']);
+          % delete([infile(1:30) '*p*.ketchup.dat']);
+
+          if ~absolutelynomessages
+            disp(['fzvzmu_IonoBoundary: timestep ' num2str(thistimestep) ' done!'])
+          end
+        end
+      end
+      clear fzvzmustruct
+      delete('datfiles/lock.fzvzmu_IonoBoundary')
+    catch
+      felfelfel=lasterror;
+      disp(felfelfel.message)
+      delete('datfiles/lock.fzvzmu_IonoBoundary')
+    end % end try
+  end
+end % end if exist('datfiles/lock.fzvzmu')
+toc
+
+%% --- Reduced distribution files --- %
 % pick out the files containing species 1 and process 0. 
 % Then start the loop.
 
@@ -1013,9 +1151,9 @@ else
 
       % To prevent attempts to process files that are being written we wait
       % ten seconds if there are less than two time steps to process.
-      if length(startfiles)<2 & length(startfiles)>0
-        pause(10)
-      end
+      % if length(startfiles)<2 & length(startfiles)>0
+      %   pause(10)
+      % end
 
       if length(startfiles)>0 & ~(Nprocs<Nprocsref)
         for ii = startfiles
@@ -1072,7 +1210,7 @@ else
                'shift_test_period','zmin','zmax','Nspecies','voltage')
 
           % EXTERMINATE!
-          delete([infile(1:26) '*p*.ketchup.dat']);
+          % delete([infile(1:26) '*p*.ketchup.dat']);
           if ~absolutelynomessages
             disp(['fzvz: timestep ' num2str(thistimestep) ' done!'])
           end

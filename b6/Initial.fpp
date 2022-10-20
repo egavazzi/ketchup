@@ -3,13 +3,13 @@ subroutine GetGeneralInput(FromDir, dt, Niter, dump_period_fields, &
      shift_test_period, resistance, Nz, zmin, zmax, Nspecies, const_a, &
      BC_Poisson, voltage, voltage_init, initialiser, E0, &
      startfromdumpfile, dump_period_dump, exitafterdump, transffilename, &
-     voltagefilename)
+     voltagefilename, dump_period_distr_IonoBoundary)
   implicit none
 
   character(len=*) :: FromDir
   character transffilename*200, voltagefilename*200
   integer Niter, dump_period_fields, fields_per_file, dump_period_distr, &
-       dump_period_distr_1v, dump_start, &
+       dump_period_distr_IonoBoundary, dump_period_distr_1v, dump_start, &
        shift_test_period, Nz, Nspecies, BC_Poisson, dump_period_dump, &
        initialiser
   double precision zmin, zmax, dt, resistance, const_a, &
@@ -25,6 +25,7 @@ subroutine GetGeneralInput(FromDir, dt, Niter, dump_period_fields, &
   dump_period_fields = 1
   fields_per_file = 1
   dump_period_distr = 1
+  dump_period_distr_IonoBoundary = 1
   dump_period_distr_1v = 10000000
   dump_start = 1
   shift_test_period = 1
@@ -71,6 +72,8 @@ subroutine GetGeneralInput(FromDir, dt, Niter, dump_period_fields, &
            read (indata(i+1:i+k-1),*) fields_per_file
         case ('dump_period_distr')
            read (indata(i+1:i+k-1),*) dump_period_distr
+        case ('dump_period_distr_IonoBoundary')
+           read (indata(i+1:i+k-1),*) dump_period_distr_IonoBoundary
         case ('dump_period_distr_1v')
            read (indata(i+1:i+k-1),*) dump_period_distr_1v
         case ('dump_start')

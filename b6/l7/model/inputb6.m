@@ -1,9 +1,11 @@
 %GENERAL PARAMETERS
 dt = 2.50e-5;                 % timestep
-Niter = 12000;              % number of iterations to perform
-dump_period_fields = 100;    % number of iterations between field dumps
+Niter = 12000;                % number of iterations to perform
+dump_period_fields = 100;     % number of iterations between field dumps
 fields_per_file = 10;         % number of field dumps to gather in each file
-dump_period_distr = 80;    % number of iterations between distribution dumps
+dump_period_distr = 1000;     % number of iterations between distribution dumps
+dump_period_distr_IonoBoundary = 80;    % number of iterations between distribution 
+                                        % dumps at the ionospheric boundary
 dump_period_distr_1v = 12000; % number of iterations between f(z,vz) dumps
 dump_start = 1;          % iteration at which dumping shall commence
 shift_test_period = 10;  % number of time steps between testing for the

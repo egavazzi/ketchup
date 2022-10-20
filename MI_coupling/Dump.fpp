@@ -122,7 +122,7 @@ end subroutine DumpDumpMPI
 
 !------------------------------------------------------------------------
 
-recursive subroutine  LoadDump(FromDir,Nspecies,Nxi,iteration,particle,myid, &
+recursive subroutine LoadDump(FromDir,Nspecies,Nxi,iteration,particle,myid, &
      attemptno,Nretries)
   
   use SpecificTypes
@@ -257,6 +257,78 @@ recursive subroutine DumpDistr(Nxi,Nspecies,particle,iteration,myid, &
   end if
 
 end subroutine DumpDistr
+
+!------------------------------------------------------------------------
+
+recursive subroutine DumpDistr_IonoBoundary(Nxi,Nspecies,particle,iteration,myid, &
+     attemptno,Nretries,neighbourRight)
+
+  use SpecificTypes
+  use ifport
+
+  implicit none
+
+  integer Nxi, Nspecies, iteration, myid, attemptno, Nretries, neighbourRight
+  type(species) particle(Nspecies)
+
+  character filename*70, tmpfile*72, fnumber*7, snumber*2, pnumber*4, form*20
+  integer ixi, ivz, ii, imu, ierr
+
+  attemptno = attemptno + 1
+
+  if (neighbourRight<0) then
+    do ii = 1, Nspecies
+      if (.not. isnan(particle(ii)%mass)) then
+
+          ! Assemble filename
+          write(fnumber,fmt='(i7.7)') iteration
+          write(snumber,fmt='(i2.2)') ii
+          write(pnumber,fmt='(i4.4)') myid
+          tmpfile='outp/datfiles/fzvzmu_IonoBoundary/XXfzvzmuIB'// &
+              fnumber//'s'//snumber//'p'//pnumber//'.ketchup.dat' 
+          filename='outp/datfiles/fzvzmu_IonoBoundary/fzvzmuIB'// &
+              fnumber//'s'//snumber//'p'//pnumber//'.ketchup.dat' 
+
+          write (form,fmt='(a,i5.5,a)') '(', particle(ii)%Nmu, '(E13.6E3,a))'
+    
+          
+          ! open file and write f(xi,vz,mu)
+          ! Format is 
+          ! ivzoffset = offset
+          ! blank line
+          ! f(vz,mu)
+          ! blank line
+          ! and then repeat for the next node, and the next, and ...
+          open(unit=1,file=tmpfile,status='replace',err=97)
+            do ixi = Nxi-1, Nxi
+              write (1,*,err=98) 'ivzoffset = ', particle(ii)%node(ixi)%ivzoffset
+              write (1,*,err=98)
+              do ivz = 1, particle(ii)%Nvz
+                  write (1,fmt=form,err=98)(particle(ii)%node(ixi)%f(ivz,imu), &
+                      ' ', imu=1,particle(ii)%Nmu)
+              end do
+              write (1,*,err=98)
+            end do
+          close(1,err=99)
+          ierr = rename(tmpfile,filename)
+
+      end if
+    end do
+  end if
+  return
+
+! Error handling section
+97 write (*,*) 'DumpDistr_IonoBoundary: error in open statement, myid=', myid
+  goto 100
+98 write (*,*) 'DumpDistr_IonoBoundary: error in write statement, myid=', myid
+  close(1,err=99)
+  goto 100
+99 write (*,*) 'DumpDistr_IonoBoundary: error in close statement, myid=', myid
+100 if (attemptno<=Nretries) then
+     call DumpDistr_IonoBoundary(Nxi,Nspecies,particle,iteration,myid,attemptno,Nretries,neighbourRight)
+  end if
+
+end subroutine DumpDistr_IonoBoundary
 
 !------------------------------------------------------------------------
 

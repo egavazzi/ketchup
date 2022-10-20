@@ -29,7 +29,7 @@ program ketchup
 
 ! input data
   integer Niter, dump_period_fields, fields_per_file, dump_period_distr, &
-       dump_period_distr_1v, dump_start, &
+       dump_period_distr_IonoBoundary, dump_period_distr_1v, dump_start, &
        shift_test_period, Nxi, Nz, Nspecies, BC_Poisson, initialiser, &
        dump_period_dump
   double precision zmin, zmax, dt, resistance, voltage, voltage_init, E0
@@ -139,7 +139,7 @@ program ketchup
        shift_test_period, resistance, Nz, zmin, zmax, Nspecies, const_a, &
        BC_Poisson, voltage, voltage_init, initialiser, E0, &
        startfromdumpfile, dump_period_dump, exitafterdump, transffilename, &
-       voltagefilename)
+       voltagefilename, dump_period_distr_IonoBoundary)
   Nxi = Nz
 
 #ifdef _DEBUG_
@@ -674,6 +674,13 @@ program ketchup
           iteration>=dump_start ) .or. iteration == Niter ) then
         attempts = 0
         call DumpDistr(Nxi_local,Nspecies,particle,iteration,myid, &
+             attempts,Nretries,neighbourRight)
+     end if
+     ! complete distribution at ionospheric boundary
+     if ( ( modulo(iteration,dump_period_distr_IonoBoundary)==0 .and. &
+          iteration>=dump_start ) .or. iteration == Niter ) then
+        attempts = 0
+        call DumpDistr_IonoBoundary(Nxi_local,Nspecies,particle,iteration,myid, &
              attempts,Nretries,neighbourRight)
      end if
      ! reduced distribution

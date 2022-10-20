@@ -21,7 +21,7 @@ program regenerate_ketchup
        dump_period_distr_old, &
        dump_period_distr_1v_old, dump_start_old, &
        shift_test_period_old, Nxi_old, Nz_old, Nspecies_old, BC_Poisson_old, &
-       initialiser_old, dump_period_dump_old
+       initialiser_old, dump_period_dump_old, dump_period_distr_IonoBoundary_old
   double precision zmin_old, zmax_old, dt_old, resistance_old, voltage_old, &
        voltage_init_old, E0_old
   double precision const_a_old
@@ -33,7 +33,7 @@ program regenerate_ketchup
        dump_period_distr_new, &
        dump_period_distr_1v_new, dump_start_new, &
        shift_test_period_new, Nxi_new, Nz_new, Nspecies_new, BC_Poisson_new, &
-       initialiser_new, dump_period_dump_new
+       initialiser_new, dump_period_dump_new, dump_period_distr_IonoBoundary_new
   double precision zmin_new, zmax_new, dt_new, resistance_new, voltage_new, &
        voltage_init_new, E0_new
   double precision const_a_new
@@ -113,7 +113,7 @@ program regenerate_ketchup
        Nspecies_old, const_a_old, BC_Poisson_old, voltage_old, &
        voltage_init_old, initialiser_old, E0_old, startfromdumpfile_old, &
        dump_period_dump_old, exitafterdump_old, transffilename_old, &
-       voltagefilename_old)
+       voltagefilename_old, dump_period_distr_IonoBoundary_old)
   Nxi_old = Nz_old
   call Bfield(2,(/ zmin_old, zmax_old /), BBC_old, dBBC_old)
 
@@ -124,7 +124,7 @@ program regenerate_ketchup
        Nspecies_new, const_a_new, BC_Poisson_new, voltage_new, &
        voltage_init_new, initialiser_new, E0_new, startfromdumpfile_new, &
        dump_period_dump_new, exitafterdump_new, transffilename_new, &
-       voltagefilename_new)
+       voltagefilename_new, dump_period_distr_IonoBoundary_new)
   Nxi_new = Nz_new
   call Bfield(2,(/ zmin_new, zmax_new /), BBC_new, dBBC_new)
 
