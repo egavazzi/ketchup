@@ -4,7 +4,7 @@ This is a time-dependent electrostatic Vlasov simulations of double layers (DL) 
 
 The code is seperated in two folders:
 - `b6/` which is almost identical to the code published as online supplementary material with the article of [Gunell et al. (2013)](https://doi.org/10.5194/angeo-31-1227-2013).
-- `MI_coupling/` which is a modified version of the `b6/` code that supports an input from a file at the ionospheric boundary. The ionospheric response can typically be calculated using the time-dependent electron transport [AURORA](https://github.com/egavazzi/AURORA) model.
+- `MI_coupling/` which is a modified version of the `b6/` code that supports an input from a file at the ionospheric boundary. The ionospheric response can typically be calculated using the time-dependent electron transport [AURORA](https://github.com/egavazzi/AURORA) model described in [Gustavsson, B. (2022)](https://doi.org/10.1029/2019JA027608)
 
 <br />
 
@@ -19,7 +19,7 @@ You should also make sure that the [Intel Fortran Compiler](https://www.intel.co
 To be able to compile and run the Fortran code from a terminal, you need to export some environment variables. The necessary commands are gathered in the shell script `ketchup/init_bash.sh` so that you just need to run it in your terminal.
 
 
-The best is to start with the `b6/` code. To compile all the Fortran code (all the *.fpp* files) situated there, use the Makefile  with:
+The best is to start with the `b6/` code. To compile the Fortran code (all the *.fpp* files) situated there, use the Makefile with:
 ```
 $> make all
 ```
@@ -51,15 +51,15 @@ model/
 
 <br />
 
-For an example, let's' copy the `model` folder into a `testcase1` and a `testcase2` folder.
-Move into `testcase1` and in the `inputb6.m` file, change "startfromdumpfile" to 'no'
+For an example, let's' copy the `model/` folder into a `testcase1/` and a `testcase2/` folder.
+Move into `testcase1/` and in the `inputb6.m` file, change *startfromdumpfile* to **no**
 . Then, you can run the experiment from the terminal using the command:
 ```
 $> mpiexec -ppn X ../ketchup
 ```
-where X is the number of processors threads you want to use (the program will parallelise itself accordingly). To analyse the data produced by the simulation, you can open Matlab from the `testcase1` folder and run the `ketchupb6conv.m` script which will convert all the .dat file containing -ASCII data into .mat files. You can then use the `ketchupb6plot.m` file to plot some of the results.
+where X is the number of processors threads you want to use (the program will parallelise accordingly). To analyse the data produced by the simulation, you can open Matlab from the `testcase1/` folder and run the `ketchupb6conv.m` script which will convert all the .dat file containing -ASCII data into .mat files. You can then use the `ketchupb6plot.m` file to plot some of the results.
 
-Now let say you want to start another simulation based on the final state of `testcase1` but with different parameters. To do this, move to `testcase2`, and set the parameters you want in `inputb6.m`. Then, edit `regen_par.m` and change "FromDir" to '../testcase1/'. You can also change "N_procs_new" to the number of processors you will want to use when running the `testcase2` simulation. Once this is done, use the command:
+Now let say you want to start another simulation based on the final state of `testcase1/` but with different parameters. To do this, move to `testcase2/`, and set the parameters you want in `inputb6.m`. Then, edit `regen_par.m` and change *FromDir* to **../testcase1/**. Change also *N_procs_new* to the number of processors you will want to use when running the `testcase2` simulation. Once this is done, use the command:
 ```
 $> ../regenerate_ketchup
 ```
